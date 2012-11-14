@@ -1,4 +1,2 @@
-junoreport
-==========
-
-A Ruby Report Generator 
+Not To Do Here Ye
+=================
