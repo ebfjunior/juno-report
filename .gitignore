@@ -1,18 +1,20 @@
-*.gem
-*.rbc
-.bundle
-.config
-coverage
-InstalledFiles
-lib/bundler/man
-pkg
-rdoc
-spec/reports
-test/tmp
-test/version_tmp
 tmp
+spec/reports
 
-# YARD artifacts
+*.gem
+InstalledFiles
+*.rbc
+.config
+rdoc
+test/version_tmp
+lib/bundler/man
+.bundle
+pkg
+coverage
 .yardoc
+lib/juno-report.sublime-project
+lib/juno-report.sublime-workspace
+# YARD artifacts
+test/tmp
 _yardoc
 doc/
