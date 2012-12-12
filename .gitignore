@@ -12,8 +12,8 @@ lib/bundler/man
 pkg
 coverage
 .yardoc
-lib/juno-report.sublime-project
-lib/juno-report.sublime-workspace
+junoreport.sublime-project
+junoreport.sublime-workspace
 # YARD artifacts
 test/tmp
 _yardoc
