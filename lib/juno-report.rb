@@ -26,45 +26,34 @@ module Juno
                 :fixed => false
             }
 
-            symbolize! @rules
             get_sections
+            set_pos_y
 
             collection = [collection] unless collection.is_a?(Array)
-
             print_section :page unless @sections[:page].nil?
-
-            set_pos_y (@rules[@sections[:body]][:settings][:posY] || 0)
-
+            set_pos_y (@sections[:body][:settings][:posY] || 0)
             @current_groups = {}
-            @sections[:groups].each do |field_name, section_name|
-                @current_groups[field_name] = nil
-            end unless @sections[:groups].nil?
+
+            unless @sections[:groups].empty?
+                @sections[:body][:settings][:groups].each { |field_name| @current_groups[field_name] = nil }
+            else
+                draw_columns
+            end
 
             collection.each do |record|
                 @record = ReportObject.new(record) if record.is_a?(Hash)
-                header = []
-                header_height = 0
-                @current_groups.each do |field, value|
-                    if @record.send(field) != value
-                        groups = @rules[@sections[:body]][:settings][:groups]
-                        groups.each_with_index do |group, idx|
-                            @current_groups[group.to_sym] = nil if groups.index(field.to_s) <= idx
-                        end
+                
+                headers_to_print, headers_height = calculate_header
 
-                        @current_groups[field] = @record.send(field)
-                        header << field.to_sym
-                        header_height += @rules[@sections[field]][:settings][:height]
-                    end
-                end unless @current_groups.empty?
-
-                unless header.empty? 
-                    if @posY - header_height < 80
+                unless headers_to_print.empty? 
+                    if @posY - headers_height < 2*@sections[:body][:settings][:height]
                         new_page 
                     else
-                        header.each { |group| print_section group, @record, true }
+                        headers_to_print.each { |group| print_section group, @record, true }
                         draw_columns
                     end
                 end
+
                 print_section :body, @record
             end
 
@@ -77,7 +66,7 @@ module Juno
             @pdf.start_new_page
             set_pos_y
             print_section :page unless @sections[:page].nil?
-            set_pos_y (@rules[@sections[:body]][:settings][:posY] || 0)
+            set_pos_y (@sections[:body][:settings][:posY] || 0)
             @current_groups.each do |field, value|
                 print_section field.to_sym, @record, true
             end
@@ -85,12 +74,12 @@ module Juno
         end
 
 
-        def print_section(section, values = nil, group = false)
-            section_name = !group ? @sections[section] : @sections[:groups][section]
-            set_pos_y(@rules[section_name][:settings][:posY] || 0) unless section.eql?(:body)
+        def print_section(section_name, values = nil, group = false)
+            section = !group ? @sections[section_name] : @sections[:groups][section_name] 
+            set_pos_y(section[:settings][:posY] || 0) unless section_name.eql?(:body) || section[:settings].nil?
             new_page if @posY < 30
 
-            @rules[section_name][:fields].each do |field, settings|
+            section[:fields].each do |field, settings|
                 symbolize! settings[1] unless settings[1].nil?
                 set_pos_y settings[1][:posY] unless settings[1].nil? || settings[1][:posY].nil?
                 settings = [settings[0], @posY, (@defaults.merge (settings[1] || { }))]
@@ -99,7 +88,11 @@ module Juno
                 value = settings[2][:value].nil? ? (values.respond_to?(field) ? values.send(field) : "") : settings[2][:value]
                 draw_text value, settings
             end
-            set_pos_y (@rules[section_name][:settings][:height]) unless @rules[section_name][:settings][:height].nil?
+            set_pos_y (section[:settings][:height]) unless section[:settings].nil? || section[:settings][:height].nil?
+        end
+
+        def draw_line(y)
+            @pdf.stroke { @pdf.horizontal_line 0, 530, :at => y }
         end
 
         def set_pos_y(posY = nil)
@@ -107,45 +100,51 @@ module Juno
             @posY = posY.nil? ? 750 : @posY - posY
         end
 
-        private
-        
-        def get_sections
-            @sections = {:groups => {}}
-            @rules.each do |section, parameters|
-                @sections[parameters[:settings][:type].to_sym] = section unless parameters[:settings][:type].nil?
-                if(parameters[:settings][:type].to_sym == :body and !parameters[:settings][:groups].nil?)
-                    parameters[:settings][:groups] = [parameters[:settings][:groups]] unless parameters[:settings][:groups].is_a? Array
-                    parameters[:settings][:groups].each do |group|
-                        @rules.each do |section, parameters|    
-                            @sections[:groups][group.to_sym] =  section if parameters[:settings][:type] == group
-                        end
-                    end
-                end
-            end
-            @sections
+        def symbolize! hash
+            hash.symbolize_keys!
+            hash.values.select{|v| v.is_a? Hash}.each{|h| symbolize!(h)}
         end
 
-        def draw_line(y)
-            @pdf.stroke { @pdf.horizontal_line 0, 530, :at => y }
+        def get_sections
+            symbolize! @rules
+            @sections = {:page => @rules[:page], :body => @rules[:body], :groups => {}}
+            @sections[:body][:settings][:groups].each { |group|  @sections[:groups][group.to_sym] = @rules[group.to_sym] } unless @sections[:body][:settings][:groups].nil?
+        end
+
+        def clean_forward_groups current_group
+            groups = @sections[:body][:settings][:groups]
+            groups.each_with_index do |group, idx|
+                @current_groups[group] = nil if groups.index(current_group.to_s) <= idx
+            end
+        end
+
+        def calculate_header
+            headers = []
+            height = 0
+            @current_groups.each do |field, value|
+                if @record.send(field) != value
+                    clean_forward_groups field
+                    @current_groups[field] = @record.send(field)
+
+                    headers << field.to_sym
+                    height += @sections[:groups][field.to_sym][:settings][:height]
+                end
+            end unless @current_groups.empty?
+            [headers, height]
         end
 
         def draw_columns
-            @rules[@sections[:body]][:fields].each do |field, settings|
+            @sections[:body][:fields].each do |field, settings|
                 settings = [settings[0], @posY, (@defaults.merge (settings[1] || { }).symbolize_keys!)]
                 set_options settings[2]
-                draw_line(@posY + @rules[@sections[:body]][:settings][:height]/2)
+                draw_line(@posY + @sections[:body][:settings][:height]/2)
                 field = settings[2][:column] || field.to_s.split('_').inject('') do |str, part|
                     str << part.camelize << " "
                 end
                 draw_text field, settings
             end
-            draw_line(@posY - @rules[@sections[:body]][:settings][:height]/2)
-            set_pos_y @rules[@sections[:body]][:settings][:height]
-        end
-
-        def symbolize! hash
-            hash.symbolize_keys!
-            hash.values.select{|v| v.is_a? Hash}.each{|h| symbolize!(h)}
+            draw_line(@posY - @sections[:body][:settings][:height]/2)
+            set_pos_y @sections[:body][:settings][:height]
         end
     end
 end
