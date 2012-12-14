@@ -1,19 +1,6 @@
-require "juno-report/version"
-require "prawml"
-
+# -*- encoding: utf-8 -*-
 module JunoReport
-    autoload :ReportObject, 'juno-report/report_object'
-
-    def self.generate(collection, options)
-        rules = "report-#{options[:report]}.yml"
-        report = Prawml::PDF.new rules
-
-        report.extend JunoReport::Pdf
-        report.generate(collection).render_file (options[:filename] || "report.pdf")
-    end
-
     module Pdf
-
         #Responsible for generate a report, based on rules passed as parameter in Juno::Report::generate. 
         #Juno Reports has support groups, just by especifying them at the rules file.
         #Receives a collection as parameter, which should be a Array of records of the report.
@@ -118,7 +105,6 @@ module JunoReport
         #Convert the structure of the rules to facilitate the generating proccess.
         def get_sections
             symbolize! @rules
-            raise "[body] section on YAML file is needed to generate the report." if @rules[:body].nil?
             @sections = {:page => @rules[:page], :body => @rules[:body], :groups => {}}
             @sections[:body][:settings][:groups].each { |group|  @sections[:groups][group.to_sym] = @rules[group.to_sym] } unless @sections[:body][:settings][:groups].nil?
         end
