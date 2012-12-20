@@ -8,7 +8,12 @@ module JunoReport
 
     def self.generate(collection, options)
         rules = "report-#{options[:report]}.yml"
-        report = Prawml::PDF.new rules
+
+        defaults = {
+            :page_layout => :portrait
+        }
+
+        report = Prawml::PDF.new rules, defaults.merge(options)
 
         report.extend JunoReport::Pdf
         report.generate(collection).render_file (options[:filename] || "report.pdf")

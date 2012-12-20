@@ -95,15 +95,17 @@ module JunoReport
 
         #Print a horizontal line with the whole width of the page.
         def draw_line(y)
-            @pdf.stroke { @pdf.horizontal_line 0, 530, :at => y }
+            width = @options[:page_layout] == :portrait ? 530 : 770
+            @pdf.stroke { @pdf.horizontal_line 0, width, :at => y }
         end
 
         #Update the pointer vertical position to the specified value or 'zero' if the parameter is nil.
         #Obs: Prawn pointer is decrescent, in other words, the left-top corner position is (0, 750). For
         #semantic purposes, we set the same corner as (0, 0).
         def set_pos_y(posY = nil)
-            @posY = 750 if @posY.nil?
-            @posY = posY.nil? ? 750 : @posY - posY
+            height = @options[:page_layout] == :portrait ? 750 : 520
+            @posY = height if @posY.nil?
+            @posY = posY.nil? ? height : @posY - posY
         end
 
         #Convert to symbol all hash keys, recursively.
