@@ -9,7 +9,7 @@ Gem::Specification.new do |gem|
     gem.authors = ["Edson Júnior"]
     gem.email = ["ejunior.batista@gmail.com"]
     gem.description = "A simple, but efficient, report genarator yaml based"
-    gem.summary = "A simple, but efficient, report genarator yaml based"
+    gem.summary = "Juno Reports generates reports with the minimum configuration and effort"
     gem.homepage = "http://github.com/ebfjunior/juno-report"
 
     gem.files = `git ls-files`.split("\n")
