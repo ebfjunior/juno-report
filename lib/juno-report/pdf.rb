@@ -35,7 +35,7 @@ module JunoReport
             can_print_footer = false
 
             collection.each do |record|
-                @record = ReportObject.new(record) if record.is_a?(Hash) #Convert the hash on a Object to futurely extend a module
+                @record = record.is_a?(Hash) ? ReportObject.new(record) : record  #Convert the hash on a Object to futurely extend a module
                 
                 headers_to_print, headers_height = calculate_header
 
