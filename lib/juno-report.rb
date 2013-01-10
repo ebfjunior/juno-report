@@ -2,12 +2,13 @@ require "juno-report/version"
 require "juno-report/pdf"
 require "juno-report/pdf/behaviors"
 require "prawml"
+require "yaml"
 
 module JunoReport
     autoload :ReportObject, 'juno-report/report_object'
 
     def self.generate(collection, options)
-        rules = "report-#{options[:report]}.yml"
+        rules = "#{options[:report]}.yml"
 
         defaults = {
             :page_layout => :portrait
