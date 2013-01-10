@@ -7,7 +7,7 @@ module JunoReport
     autoload :ReportObject, 'juno-report/report_object'
 
     def self.generate(collection, options)
-        rules = "report-#{options[:report]}.yml"
+        rules = "#{options[:report]}.yml"
 
         defaults = {
             :page_layout => :portrait
