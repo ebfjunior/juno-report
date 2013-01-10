@@ -2,7 +2,6 @@ require "juno-report/version"
 require "juno-report/pdf"
 require "juno-report/pdf/behaviors"
 require "prawml"
-require "yaml"
 
 module JunoReport
     autoload :ReportObject, 'juno-report/report_object'
