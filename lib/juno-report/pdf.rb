@@ -85,6 +85,7 @@ module JunoReport
                 symbolize! settings[1] unless settings[1].nil?
                 set_pos_y settings[1][:posY] unless settings[1].nil? || settings[1][:posY].nil?
                 settings = [settings[0], @posY, (@defaults.merge (settings[1] || { }))]
+                settings[2][:style] = settings[2][:style].to_sym
                 set_options settings[2]
 
                 value = settings[2][:value].nil? ? (values.respond_to?(field) ? values.send(field) : "") : settings[2][:value]
@@ -195,6 +196,7 @@ module JunoReport
                 draw_line(@posY + @sections[:body][:settings][:height]/2)
                 source[group][:footer].each do |field, settings|
                     settings = [settings[0], @posY, (@defaults.merge (settings[1] || { }).symbolize_keys!)]
+                    settings[2][:style] = settings[2][:style].to_sym
                     set_options settings[2]
                     draw_text @footers[group][field], settings
                 end
@@ -213,6 +215,7 @@ module JunoReport
         def draw_columns
             @sections[:body][:fields].each do |field, settings|
                 settings = [settings[0], @posY, (@defaults.merge (settings[1] || { }).symbolize_keys!)]
+                settings[2][:style] = settings[2][:style].to_sym
                 set_options settings[2]
                 draw_line(@posY + @sections[:body][:settings][:height]/2)
                 field = settings[2][:column] || field.to_s.split('_').inject('') do |str, part|
