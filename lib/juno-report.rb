@@ -13,9 +13,20 @@ module JunoReport
             :page_layout => :portrait
         }
 
-        report = Prawml::PDF.new rules, defaults.merge(options)
+        pdf = Prawml::PDF.new rules, defaults.merge(options)
 
-        report.extend JunoReport::Pdf
-        report.generate(collection).render_file (options[:filename] || "report.pdf")
+        pdf.extend JunoReport::Pdf
+        report  = pdf.generate(collection)
+
+        options[:type] ||= :file
+
+        if options[:type].eql? :file
+            report.render_file (options[:filename] || "report.pdf")
+        elsif options[:type].eql? :stream
+            return report
+        else
+            raise "Type options must be :file or :stream."
+        end
+
     end
 end

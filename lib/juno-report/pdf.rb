@@ -185,7 +185,7 @@ module JunoReport
                 unless footer_rule[1][:behavior].nil?
                     @footers[group.to_sym][field] = JunoReport::Pdf::Behaviors.send footer_rule[1][:behavior].to_sym, value, (@record.respond_to?(field) ? @record.send(field) : nil)
                 else
-                    @footers[group.to_sym][field] = footer_rule[1][:text] || (footer_rule[1][:label].to_s + @record.send(field))
+                    @footers[group.to_sym][field] = footer_rule[1][:value] || (footer_rule[1][:label].to_s + @record.send(field))
                 end unless @footers[group.to_sym].nil? || footer_rule[1].nil?
             end
         end
