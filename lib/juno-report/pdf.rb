@@ -1,7 +1,7 @@
 module JunoReport
     module Pdf
 
-        #Responsible for generate a report, based on rules passed as parameter in Juno::Report::generate. 
+        #Responsible for generate a report, based on rules passed as parameter in Juno::Report::generate.
         #Juno Reports has support groups, just by especifying them at the rules file.
         #Receives a collection as parameter, which should be a Array of records of the report.
         def generate(collection)
@@ -24,6 +24,7 @@ module JunoReport
             set_pos_y (@sections[:body][:settings][:posY] || 0)
             @current_groups = {}
             @footers = {}
+            @count = 0
 
             unless @sections[:groups].empty?
                 reset_groups_values
@@ -36,13 +37,14 @@ module JunoReport
 
             collection.each do |record|
                 @record = record.is_a?(Hash) ? ReportObject.new(record) : record  #Convert the hash on a Object to futurely extend a module
-                
+
                 headers_to_print, headers_height = calculate_header
 
-                unless headers_to_print.empty? 
+                unless headers_to_print.empty?
+                    @count = 0
                     draw_footer headers_to_print, @sections[:groups] if can_print_footer
                     if @posY - headers_height < 2*@sections[:body][:settings][:height]
-                        new_page 
+                        new_page
                     else
                         headers_to_print.each  { |group| print_section group, @record, true }
                         draw_columns
@@ -52,6 +54,7 @@ module JunoReport
 
                 update_footer_values
                 print_section :body, @record
+                @count += 1
             end
 
             draw_footer(@sections[:body][:settings][:groups].collect {|group| group.to_sym}, @sections[:groups]) if has_groups?
@@ -77,9 +80,15 @@ module JunoReport
 
         #Generic function to print a section like :body, :page or the group sections.
         def print_section(section_name, values = nil, group = false)
-            section = !group ? @sections[section_name] : @sections[:groups][section_name] 
+            section = !group ? @sections[section_name] : @sections[:groups][section_name]
             set_pos_y(section[:settings][:posY] || 0) unless section_name.eql?(:body) || section[:settings].nil?
             new_page if @posY < 30
+
+            if section_name.eql? :body and @count % 2 != 0
+                @pdf.fill_color "F7F7F7"
+                width = @options[:page_layout] == :portrait ? 530 : 770
+                @pdf.fill_rectangle [0, @posY+(section[:settings][:height]/2)], width, section[:settings][:height]
+            end
 
             section[:fields].each do |field, settings|
                 symbolize! settings[1] unless settings[1].nil?
@@ -123,7 +132,7 @@ module JunoReport
             @sections[:body][:settings][:groups].each { |group|  @sections[:groups][group.to_sym] = @rules[group.to_sym] } if has_groups?
         end
 
-        #@current_groups storages the value for all groups. When a value is changed, the header is printed. 
+        #@current_groups storages the value for all groups. When a value is changed, the header is printed.
         #This function set nil value for every item in @current_groups if the parameter is not passed. Otherwise,
         #only the forward groups will be cleaned to avoid conflict problems with others groups.
         def reset_groups_values current_group = nil
@@ -136,7 +145,7 @@ module JunoReport
 
         #Calculates the headers which must be printed before print the current record.
         #The function also returns the current header height to create a new page if the
-        #page remaining space is smaller than (header + a record height) 
+        #page remaining space is smaller than (header + a record height)
         def calculate_header
             headers = []
             height = 0
@@ -155,7 +164,7 @@ module JunoReport
 
         #Create a structure to calculate the footer values for all groups. Appends the footer body to total values too.
         def initialize_footer_values
-            @sections[:body][:settings][:groups].each do |group| 
+            @sections[:body][:settings][:groups].each do |group|
                 current_footer = {}
                 @sections[:groups][group.to_sym][:footer].each { |field, settings| current_footer[field] = nil } unless @sections[:groups][group.to_sym][:footer].nil?
                 @footers[group.to_sym] = current_footer unless current_footer.empty?
@@ -175,7 +184,7 @@ module JunoReport
             calculate_footer_values :body, @sections[:body][:footer]
         end
 
-        #Returns the values to the group passed as parameter. If :behavior setting is used, so a 
+        #Returns the values to the group passed as parameter. If :behavior setting is used, so a
         #function in [lib/pdf/behaviors.rb] calculates the value of current field, else the report
         #method is called
         def calculate_footer_values group, source
