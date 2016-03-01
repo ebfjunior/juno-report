@@ -100,7 +100,8 @@ module JunoReport
                 set_options settings[2]
 
                 value = settings[2][:value].nil? ? (values.respond_to?(field) ? values.send(field) : "") : settings[2][:value]
-                draw_text value, settings
+                string_cut = settings[2][:cut].nil? ? value : value[0..settings[2][:cut]]
+                draw_text string_cut, settings
             end
             set_pos_y (section[:settings][:height]) unless section[:settings].nil? || section[:settings][:height].nil?
         end
@@ -130,7 +131,7 @@ module JunoReport
         def get_sections
             symbolize! @rules
             raise "[body] section on YAML file is needed to generate the report." if @rules[:body].nil?
-            @sections = {:page => @rules[:page], :body => @rules[:body], :groups => {}}
+            @sections = {:page => @rules[:page], :body => @rules[:body], :defaults => @rules[:defaults], :groups => {}}
             @sections[:body][:settings][:groups].each { |group|  @sections[:groups][group.to_sym] = @rules[group.to_sym] } if has_groups?
         end
 
