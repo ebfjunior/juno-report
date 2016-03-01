@@ -19,7 +19,9 @@ module JunoReport
             get_sections
             set_pos_y
 
-            collection = [collection] unless collection.is_a?(Array)
+	    @defaults.merge!(@sections[:defaults]) unless @sections[:defaults].nil?
+            
+	    collection = [collection] unless collection.is_a?(Array) or collection.is_a?(ActiveRecord::Relation)
             print_section :page unless @sections[:page].nil?
             set_pos_y (@sections[:body][:settings][:posY] || 0)
             @current_groups = {}

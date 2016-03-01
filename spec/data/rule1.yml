@@ -1,0 +1,10 @@
+body:
+  settings: {posY: 40, height: 25}
+  fields:
+    test_field1: [10]
+    test_field2: [220]
+    test_field3: [430, {column: "Named Test Field 3"}]
+  footer:
+    label_total: [10, {value: "Total"}]
+    totalizer: [220, {behavior: count}]
+    test_field3: [430, {behavior: sum}]

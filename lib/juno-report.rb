@@ -7,7 +7,7 @@ module JunoReport
     autoload :ReportObject, 'juno-report/report_object'
 
     def self.generate(collection, options)
-        rules = "#{options[:report]}.yml"
+        rules = (File.open "#{options[:report]}.yml").read
 
         defaults = {
             :page_layout => :portrait
@@ -23,7 +23,7 @@ module JunoReport
         if options[:type].eql? :file
             report.render_file (options[:filename] || "report.pdf")
         elsif options[:type].eql? :stream
-            return report
+            return report.render
         else
             raise "Type options must be :file or :stream."
         end
