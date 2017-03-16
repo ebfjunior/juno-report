@@ -99,7 +99,18 @@ module JunoReport
                 settings[2][:style] = settings[2][:style].to_sym
                 set_options settings[2]
 
-                value = settings[2][:value].nil? ? (values.respond_to?(field) ? values.send(field) : "") : settings[2][:value]
+
+                if group and !values.class.reflect_on_association(section_name).nil?
+                    resource = values.send(section_name.to_sym)
+                else
+                    resource = values
+                end
+                
+                field.to_s.split(".").each do |part|
+                    resource = resource.send(part) if !resource.class.reflect_on_association(part).nil?
+                end
+                value = settings[2][:value].nil? ? (resource.respond_to?(field) ? resource.send(field) : "") : settings[2][:value]
+
                 string_cut = settings[2][:cut].nil? ? value : value[0..settings[2][:cut]]
                 draw_text string_cut, settings
             end
@@ -152,16 +163,20 @@ module JunoReport
         def calculate_header
             headers = []
             height = 0
-            @current_groups.each do |field, value|
-                if @record.send(field) != value
+            @current_groups.each do |field, current_value|
+                identifier_field = @sections[:groups][field.to_sym][:settings][:identifier_field] || nil
+                value = (!@record.class.reflect_on_association(field).nil? and !identifier_field.nil?) ? @record.send(field.to_sym).send(identifier_field) : @record.send(field)
+
+                if value != current_value
                     reset_groups_values field
 
                     headers << field.to_sym
                     height += @sections[:groups][field.to_sym][:settings][:height] + @sections[:groups][field.to_sym][:settings][:posY]
 
-                    @current_groups[field] = @record.send(field)
+                    @current_groups[field] = value
                 end
             end unless @current_groups.empty?
+
             [headers, height]
         end
 
@@ -197,7 +212,12 @@ module JunoReport
                 unless footer_rule[1][:behavior].nil?
                     @footers[group.to_sym][field] = JunoReport::Pdf::Behaviors.send footer_rule[1][:behavior].to_sym, value, (@record.respond_to?(field) ? @record.send(field) : nil)
                 else
-                    @footers[group.to_sym][field] = footer_rule[1][:value] || (footer_rule[1][:label].to_s + @record.send(field))
+                    if footer_rule[1][:value].blank?
+                        value = !@record.class.reflect_on_association(group.to_sym).nil? ? @record.send(group.to_sym).send(field.to_sym) : @record.send(field)
+                    else
+                        value = footer_rule[1][:value]
+                    end
+                    @footers[group.to_sym][field] = footer_rule[1][:label].to_s + value
                 end unless @footers[group.to_sym].nil? || footer_rule[1].nil?
             end
         end
