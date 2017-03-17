@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    juno-report (0.1.4)
+    juno-report (0.1.6)
       prawml
 
 GEM
