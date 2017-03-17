@@ -19,9 +19,9 @@ module JunoReport
             get_sections
             set_pos_y
 
-	    @defaults.merge!(@sections[:defaults]) unless @sections[:defaults].nil?
+            @defaults.merge!(@sections[:defaults]) unless @sections[:defaults].nil?
             
-	    collection = [collection] unless collection.is_a?(Array) or collection.is_a?(ActiveRecord::Relation)
+            collection = [collection] unless collection.is_a?(Array) or collection.is_a?(ActiveRecord::Relation)
             print_section :page unless @sections[:page].nil?
             set_pos_y (@sections[:body][:settings][:posY] || 0)
             @current_groups = {}
@@ -99,22 +99,35 @@ module JunoReport
                 settings[2][:style] = settings[2][:style].to_sym
                 set_options settings[2]
 
-
-                if group and !values.class.reflect_on_association(section_name).nil?
-                    resource = values.send(section_name.to_sym)
-                else
-                    resource = values
-                end
-                
-                field.to_s.split(".").each do |part|
-                    resource = resource.send(part) if !resource.class.reflect_on_association(part).nil?
-                end
-                value = settings[2][:value].nil? ? (resource.respond_to?(field) ? resource.send(field) : "") : settings[2][:value]
-
-                string_cut = settings[2][:cut].nil? ? value : value[0..settings[2][:cut]]
-                draw_text string_cut, settings
+                value = set_value values, settings, section_name, field, group                
+                draw_text value, settings
             end
             set_pos_y (section[:settings][:height]) unless section[:settings].nil? || section[:settings][:height].nil?
+        end
+
+
+        def set_value(values, settings, section_name, field, group)
+            if group and !values.class.reflect_on_association(section_name).nil?
+                resource = values.send(section_name.to_sym)
+            else
+                resource = values
+            end
+
+            field.to_s.split(".").each do |part|
+                resource = resource.send(part) if !resource.class.reflect_on_association(part).nil?
+            end if settings[2][:value].nil?
+
+            field = field.to_s.split(".").last
+
+            value = settings[2][:value].nil? ? (resource.respond_to?(field) ? resource.send(field) : "") : settings[2][:value]
+
+            unless settings[2][:format].blank?
+                value = JunoReport::Pdf::Formatters.send(settings[2][:format], value)
+            end
+
+            string_cut = settings[2][:cut].nil? ? value : value[0..settings[2][:cut]]
+
+            string_cut
         end
 
         #Print a horizontal line with the whole width of the page.

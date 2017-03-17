@@ -1,6 +1,7 @@
 require "juno-report/version"
 require "juno-report/pdf"
 require "juno-report/pdf/behaviors"
+require "juno-report/pdf/formatters"
 require "prawml"
 
 module JunoReport
